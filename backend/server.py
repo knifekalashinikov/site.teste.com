@@ -110,9 +110,6 @@ def generate_qr_code(pix_code: str) -> str:
     # Em produção, gerar QR code real usando biblioteca apropriada
     return f"data:text/plain;base64,{pix_code}"
 
-# Include the router in the main app
-app.include_router(api_router)
-
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
