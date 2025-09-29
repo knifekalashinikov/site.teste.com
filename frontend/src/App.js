@@ -18,7 +18,213 @@ import { Instagram, Star, Clock, Users, Shield, Zap } from "lucide-react";
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const HomePage = () => {
+// Admin Component
+const AdminPanel = () => {
+  const [orders, setOrders] = useState([]);
+  const [stats, setStats] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchOrders();
+    fetchStats();
+  }, []);
+
+  const fetchOrders = async () => {
+    try {
+      const response = await axios.get(`${API}/orders`);
+      setOrders(response.data);
+    } catch (error) {
+      console.error("Erro ao buscar pedidos:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const response = await axios.get(`${API}/admin/stats`);
+      setStats(response.data);
+    } catch (error) {
+      console.error("Erro ao buscar estatísticas:", error);
+    }
+  };
+
+  const updateOrderStatus = async (orderId, newStatus) => {
+    try {
+      await axios.put(`${API}/orders/${orderId}/status`, { status: newStatus });
+      fetchOrders(); // Refresh orders
+    } catch (error) {
+      console.error("Erro ao atualizar pedido:", error);
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    const colors = {
+      pending: "bg-yellow-500",
+      paid: "bg-blue-500",
+      processing: "bg-purple-500", 
+      completed: "bg-green-500",
+      cancelled: "bg-red-500"
+    };
+    
+    const labels = {
+      pending: "Pendente",
+      paid: "Pago",
+      processing: "Processando",
+      completed: "Completo",
+      cancelled: "Cancelado"
+    };
+
+    return (
+      <Badge className={`${colors[status] || "bg-gray-500"} text-white`}>
+        {labels[status] || status}
+      </Badge>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-black via-purple-900 to-black text-white p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center gap-4 mb-8">
+          <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-3 rounded-full">
+            <Instagram className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-4xl font-bold">Painel Administrativo</h1>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-gradient-to-b from-gray-900 to-black border-gray-700">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-gray-400">Total Pedidos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-white">{stats.total_orders || 0}</div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-b from-gray-900 to-black border-gray-700">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-gray-400">Pedidos Pendentes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-yellow-400">{stats.pending_orders || 0}</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-b from-gray-900 to-black border-gray-700">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-gray-400">Pedidos Completos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-green-400">{stats.completed_orders || 0}</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-b from-gray-900 to-black border-gray-700">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-gray-400">Receita Total</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-purple-400">R$ {(stats.total_revenue || 0).toFixed(2).replace('.', ',')}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Orders Table */}
+        <Card className="bg-gradient-to-b from-gray-900 to-black border-gray-700">
+          <CardHeader>
+            <CardTitle className="text-xl text-white">Pedidos</CardTitle>
+            <CardDescription className="text-gray-400">
+              Gerencie todos os pedidos de seguidores
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+                <p className="mt-4 text-gray-400">Carregando pedidos...</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-700">
+                      <th className="text-left p-2 text-gray-300">ID</th>
+                      <th className="text-left p-2 text-gray-300">Cliente</th>
+                      <th className="text-left p-2 text-gray-300">Instagram</th>
+                      <th className="text-left p-2 text-gray-300">Pacote</th>
+                      <th className="text-left p-2 text-gray-300">Valor</th>
+                      <th className="text-left p-2 text-gray-300">Status</th>
+                      <th className="text-left p-2 text-gray-300">Data</th>
+                      <th className="text-left p-2 text-gray-300">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orders.map((order) => (
+                      <tr key={order.id} className="border-b border-gray-800 hover:bg-gray-800/50">
+                        <td className="p-2">
+                          <span className="font-mono text-xs text-gray-400">
+                            {order.id.substring(0, 8)}...
+                          </span>
+                        </td>
+                        <td className="p-2">
+                          <div>
+                            <div className="text-white font-medium">{order.customer_name}</div>
+                            <div className="text-xs text-gray-400">{order.customer_email}</div>
+                          </div>
+                        </td>
+                        <td className="p-2">
+                          <span className="text-purple-400">@{order.instagram_username}</span>
+                        </td>
+                        <td className="p-2">
+                          <div>
+                            <div className="text-white">{order.package_name}</div>
+                            <div className="text-xs text-gray-400">{order.package_quantity.toLocaleString()} seguidores</div>
+                          </div>
+                        </td>
+                        <td className="p-2">
+                          <span className="text-green-400 font-medium">
+                            R$ {order.package_price.toFixed(2).replace('.', ',')}
+                          </span>
+                        </td>
+                        <td className="p-2">{getStatusBadge(order.status)}</td>
+                        <td className="p-2">
+                          <span className="text-xs text-gray-400">
+                            {new Date(order.created_at).toLocaleString('pt-BR')}
+                          </span>
+                        </td>
+                        <td className="p-2">
+                          <select
+                            value={order.status}
+                            onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                            className="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-xs text-white focus:border-purple-500"
+                          >
+                            <option value="pending">Pendente</option>
+                            <option value="paid">Pago</option>
+                            <option value="processing">Processando</option>
+                            <option value="completed">Completo</option>
+                            <option value="cancelled">Cancelado</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                
+                {orders.length === 0 && (
+                  <div className="text-center py-8 text-gray-400">
+                    Nenhum pedido encontrado
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedPackage, setSelectedPackage] = useState(null);
