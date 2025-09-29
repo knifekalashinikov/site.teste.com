@@ -318,6 +318,9 @@ async def initialize_data():
     await db.packages.insert_many(packages_to_insert)
     return {"message": f"Inicializados {len(default_packages)} pacotes padrão"}
 
+# Include the router in the main app
+app.include_router(api_router)
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
