@@ -225,7 +225,8 @@ const AdminPanel = () => {
     </div>
   );
 };
-  const [packages, setPackages] = useState([]);
+
+const HomePage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [orderForm, setOrderForm] = useState({
